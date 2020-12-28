@@ -1,6 +1,6 @@
+use ca_110::cli;
 use ca_110::image_manip::bitmap::BitMap;
 use ca_110::image_manip::build_gif;
-use ca_110::cli;
 
 fn main() {
     let args = cli::parse_args();

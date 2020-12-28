@@ -1,7 +1,7 @@
 pub mod bitmap;
 pub use bitmap::BitMap;
 
-use image::gif::{GifEncoder};
+use image::gif::GifEncoder;
 use image::Delay;
 use image::Frame;
 use image::GenericImage;
@@ -53,7 +53,7 @@ fn gen_next_image(image: &mut RgbaImage, mut line: &mut BitMap) -> ImageResult<R
 
     for x in 0..width {
         for y in 1..height {
-            let p = image.get_pixel(x, y); 
+            let p = image.get_pixel(x, y);
             new_image.put_pixel(x, y - 1, *p);
         }
     }
