@@ -16,14 +16,10 @@ enum Colour {
 fn push_pixel(mut vec: &mut Vec<u8>, colour: Colour) {
     match colour {
         Colour::WHITE => {
-            vec.push(255);
-            vec.push(255);
-            vec.push(255);
+            vec.push(0);
         }
         Colour::BLACK => {
-            vec.push(0);
-            vec.push(0);
-            vec.push(0);
+            vec.push(1);
         }
     }
 }
@@ -34,7 +30,7 @@ fn init_image(
     height: u16,
     mut init_line: &mut BitMap,
 ) -> Result<Vec<u8>, EncodingError> {
-    let mut image: Vec<u8> = Vec::with_capacity(3 * (width as usize) * (height as usize));
+    let mut image: Vec<u8> = Vec::with_capacity((width as usize) * (height as usize));
     *init_line = bitmap::rule110_step(&mut init_line);
     for y in 0..height {
         for x in 0..width {
@@ -60,7 +56,7 @@ fn gen_next_image(
     mut line: &mut BitMap,
 ) -> Result<Vec<u8>, EncodingError> {
     let mut new_image = image.clone();
-    let first_row_len: usize = 3 * (width as usize);
+    let first_row_len: usize = width as usize;
     // delete first row
     new_image.drain(0..first_row_len);
 
@@ -88,7 +84,8 @@ pub fn build_gif(
 ) -> Result<(), EncodingError> {
     let mut file = File::create(file_name)?;
     // TODO:
-    let mut encoder = Encoder::new(file, width, height, &[]).unwrap();
+    let mut encoder = Encoder::new(file, width, height, &[0xFF, 0xFF, 0xFF, 0, 0, 0]).unwrap();
+    encoder.set_repeat(Repeat::Infinite).unwrap();
     // build initial frame
     let mut img = match init_image(width, height, &mut init_line) {
         Ok(image) => image,
@@ -96,7 +93,11 @@ pub fn build_gif(
             return Err(e);
         }
     };
-    let frame = Frame::from_rgb(width, height, &mut *img);
+    let mut frame = Frame::default();
+    frame.width = width;
+    frame.height = height;
+    frame.buffer = Cow::Borrowed(&*img);
+
     match encoder.write_frame(&frame) {
         Ok(()) => {}
         Err(e) => {
@@ -109,7 +110,10 @@ pub fn build_gif(
             Ok(img) => img,
             Err(e) => return Err(e),
         };
-        let frame = Frame::from_rgb(width, height, &mut *new_image);
+        let mut frame = Frame::default();
+        frame.width = width;
+        frame.height = height;
+        frame.buffer = Cow::Borrowed(&*new_image);
         match encoder.write_frame(&frame) {
             Ok(()) => {}
             Err(e) => {

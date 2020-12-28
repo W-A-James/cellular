@@ -28,7 +28,7 @@ fn main() {
     let (tx, rx) = mpsc::channel();
     let mut progress_bar = init_progress_bar(&output);
 
-    thread::spawn(move || loop {
+    let progress_thread = thread::spawn(move || loop {
         match rx.try_recv() {
             Ok(val) => {
                 update_progress_bar(&mut progress_bar, val + 1, steps - 1);
@@ -55,4 +55,6 @@ fn main() {
             println!("Error building {}", args.output);
         }
     }
+
+    progress_thread.join().unwrap();
 }
