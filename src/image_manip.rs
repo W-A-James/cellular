@@ -13,7 +13,7 @@ enum Colour {
     BLACK,
 }
 
-fn push_pixel(mut vec: &mut Vec<u8>, colour: Colour) {
+fn push_pixel(vec: &mut Vec<u8>, colour: Colour) {
     match colour {
         Colour::WHITE => {
             vec.push(0);
@@ -32,7 +32,7 @@ fn init_image(
 ) -> Result<Vec<u8>, EncodingError> {
     let mut image: Vec<u8> = Vec::with_capacity((width as usize) * (height as usize));
     *init_line = bitmap::rule110_step(&mut init_line);
-    for y in 0..height {
+    for _y in 0..height {
         for x in 0..width {
             if init_line.get(x as usize) == 1 {
                 // black
@@ -52,7 +52,7 @@ fn init_image(
 fn gen_next_image(
     image: &Vec<u8>,
     width: u16,
-    height: u16,
+    _height: u16,
     mut line: &mut BitMap,
 ) -> Result<Vec<u8>, EncodingError> {
     let mut new_image = image.clone();
@@ -62,7 +62,7 @@ fn gen_next_image(
 
     *line = bitmap::rule110_step(&mut line);
     let mut index: usize = 0 as usize;
-    for x in 0..width {
+    for _x in 0..width {
         if line.get(index) == 1 {
             push_pixel(&mut new_image, Colour::BLACK);
         } else {
@@ -82,7 +82,7 @@ pub fn build_gif(
     file_name: &str,
     tx: Sender<u32>,
 ) -> Result<(), EncodingError> {
-    let mut file = File::create(file_name)?;
+    let file = File::create(file_name)?;
     // TODO:
     let mut encoder = Encoder::new(file, width, height, &[0xFF, 0xFF, 0xFF, 0, 0, 0]).unwrap();
     encoder.set_repeat(Repeat::Infinite).unwrap();
@@ -106,7 +106,7 @@ pub fn build_gif(
     };
     // iterate over other frames
     for s in 1..steps {
-        let mut new_image = match gen_next_image(&mut img, width, height, &mut init_line) {
+        let new_image = match gen_next_image(&mut img, width, height, &mut init_line) {
             Ok(img) => img,
             Err(e) => return Err(e),
         };
@@ -131,7 +131,6 @@ pub fn build_gif(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     #[ignore]

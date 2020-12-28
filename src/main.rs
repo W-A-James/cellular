@@ -31,7 +31,7 @@ fn main() {
     let progress_thread = thread::spawn(move || loop {
         match rx.try_recv() {
             Ok(val) => {
-                update_progress_bar(&mut progress_bar, val + 1, steps - 1);
+                update_progress_bar(&mut progress_bar, val + 1, steps);
                 if val == steps - 1 {
                     break;
                 }

@@ -358,7 +358,7 @@ mod tests {
         for size in &sizes {
             let start = Instant::now();
             for _ in 0..num_iterations {
-                let mut bmp = BitMap::random(*size as usize);
+                let _bmp = BitMap::random(*size as usize);
             }
             let end = Instant::now();
 
