@@ -129,6 +129,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_gen_next_image() {
+        // Should ensure that the bitmap is properly updated
         assert!(false);
     }
 
