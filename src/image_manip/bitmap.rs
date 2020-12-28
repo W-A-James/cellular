@@ -102,6 +102,14 @@ impl BitMap {
     pub fn get_vec(&self) -> Vec<u64> {
         self.vals.clone()
     }
+
+    pub fn to_bit_vec(&self) -> Vec<u8> {
+        let mut bit_vec: Vec<u8> = Vec::with_capacity(self.len);
+        for i in 0..self.len {
+            bit_vec[i] = self.get(i);
+        }
+        return bit_vec;
+    }
 }
 
 // TODO: parallelize this
