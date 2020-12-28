@@ -340,27 +340,30 @@ mod tests {
     use std::time::Duration;
     use std::time::Instant;
     #[test]
-    fn rule110_step_profiling() {
+    fn profiling() {
         let sizes = vec![64, 128, 256, 512, 1024, 2048, 4096];
         let len = sizes.len();
         let mut rule110_times: Vec<Duration> = Vec::with_capacity(sizes.len());
         let mut constructor_times: Vec<Duration> = Vec::with_capacity(sizes.len());
         let num_iterations = 1000;
 
-        // Constructor
         for size in &sizes {
-            let mut bmp: BitMap;
             let start = Instant::now();
             for _ in 0..num_iterations {
-                bmp = BitMap::random(*size as usize);
+                let mut bmp = BitMap::random(*size as usize);
             }
             let end = Instant::now();
+
             constructor_times.push(end.duration_since(start));
+        }
+
+        for size in &sizes {
+            let mut bmp = BitMap::random(*size as usize);
 
             // rule110_step
             let start = Instant::now();
             for _ in 0..num_iterations {
-                let mut bmp = rule110_step(&mut bmp);
+                bmp = rule110_step(&mut bmp);
             }
             let end = Instant::now();
             rule110_times.push(end.duration_since(start));
