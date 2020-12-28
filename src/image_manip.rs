@@ -115,3 +115,26 @@ pub fn build_gif(
     tx.send(steps - 1).unwrap();
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore]
+    fn test_init_image() {
+        assert!(false);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_gen_next_image() {
+        assert!(false);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_build_gif() {
+        assert!(false);
+    }
+}
