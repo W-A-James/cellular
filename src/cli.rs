@@ -1,5 +1,4 @@
 use clap::{App, Arg};
-use log::debug;
 
 pub struct CLIArgs {
     pub width: u32,

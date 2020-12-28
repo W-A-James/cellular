@@ -4,10 +4,11 @@ pub use bitmap::BitMap;
 use image::gif::GifEncoder;
 use image::Delay;
 use image::Frame;
-use image::GenericImage;
 use image::ImageResult;
 use image::{Rgba, RgbaImage};
+
 use std::fs::File;
+use std::sync::mpsc::Sender;
 
 enum Colour {
     WHITE,
@@ -78,34 +79,39 @@ pub fn build_gif(
     steps: u32,
     mut init_line: &mut BitMap,
     file_name: &str,
+    tx: Sender<u32>,
 ) -> ImageResult<()> {
     let file = File::create(file_name)?;
     let mut encoder = GifEncoder::new(file);
-    let mut vec: Vec<ImageResult<Frame>> = Vec::with_capacity(steps as usize);
     // build initial frame
     let mut img = match init_image(width, height, &mut init_line) {
         Ok(image) => image,
-        Err(e) => panic!(e),
+        Err(e) => {
+            return Err(e);
+        }
     };
-    vec.push(Ok(Frame::from_parts(
-        img.clone(),
-        0,
-        0,
-        Delay::from_numer_denom_ms(10, 1),
-    )));
     // iterate over other frames
-    for _ in 1..steps {
+    for s in 1..steps {
         let new_image = match gen_next_image(&mut img, &mut init_line) {
             Ok(img) => img,
-            Err(e) => panic!(e),
+            Err(e) => return Err(e),
         };
-        vec.push(Ok(Frame::from_parts(
+        match encoder.encode_frame(Frame::from_parts(
             new_image.clone(),
             0,
             0,
             Delay::from_numer_denom_ms(10, 1),
-        )));
+        )) {
+            Ok(()) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
         img = new_image;
+
+        tx.send(s).unwrap();
     }
-    encoder.try_encode_frames(vec)
+    tx.send(steps - 1).unwrap();
+    Ok(())
 }
