@@ -1,4 +1,4 @@
-use ca_110::bitmap::BitMap::BitMap;
+use ca_110::image_manip::bitmap::BitMap;
 use ca_110::image_manip::build_gif;
 use ca_110::cli;
 
