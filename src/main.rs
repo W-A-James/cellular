@@ -48,7 +48,7 @@ fn main() {
         args.steps,
         &mut init_line,
         args.output.as_str(),
-        tx,
+        Some(tx),
     ) {
         Ok(_) => {}
         Err(_) => {
