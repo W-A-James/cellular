@@ -28,10 +28,10 @@ fn main() {
     let (tx, rx) = mpsc::channel();
     let mut progress_bar = init_progress_bar(&output);
 
-    thread::spawn(move || loop {
+    let progress_thread = thread::spawn(move || loop {
         match rx.try_recv() {
             Ok(val) => {
-                update_progress_bar(&mut progress_bar, val + 1, steps - 1);
+                update_progress_bar(&mut progress_bar, val + 1, steps);
                 if val == steps - 1 {
                     break;
                 }
@@ -48,11 +48,13 @@ fn main() {
         args.steps,
         &mut init_line,
         args.output.as_str(),
-        tx,
+        Some(tx),
     ) {
         Ok(_) => {}
         Err(_) => {
             println!("Error building {}", args.output);
         }
     }
+
+    progress_thread.join().unwrap();
 }

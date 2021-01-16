@@ -1,8 +1,8 @@
 use clap::{App, Arg};
 
 pub struct CLIArgs {
-    pub width: u32,
-    pub height: u32,
+    pub width: u16,
+    pub height: u16,
     pub steps: u32,
     pub random: bool,
     pub output: String,
@@ -11,8 +11,8 @@ pub struct CLIArgs {
 
 impl CLIArgs {
     pub fn new(
-        width: u32,
-        height: u32,
+        width: u16,
+        height: u16,
         steps: u32,
         random: bool,
         output: &str,
