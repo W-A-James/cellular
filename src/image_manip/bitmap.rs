@@ -169,6 +169,39 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_constructor_bad_args() {
+        BitMap::new(0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_random_constructor_bad_args() {
+        BitMap::random(0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_get_with_out_of_bounds_val() {
+        let bmp = BitMap::random(10);
+        bmp.get(10 as usize);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_set_with_out_of_bounds_val() {
+        let mut bmp = BitMap::random(10);
+        bmp.set(10 as usize);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_unset_with_out_of_bounds_val() {
+        let mut bmp = BitMap::random(10);
+        bmp.unset(10 as usize);
+    }
+
+    #[test]
     fn test_set() {
         let mut bmp = BitMap::new(64);
         let mut cur_val: u64 = 0;
@@ -194,12 +227,6 @@ mod tests {
             let vec = bmp.get_vec();
             assert!(vec[0] == cur_val);
         }
-    }
-
-    #[test]
-    #[ignore]
-    fn test_get() {
-        assert!(false);
     }
 
     #[test]
@@ -348,10 +375,34 @@ mod tests {
     use std::time::Duration;
     use std::time::Instant;
     #[test]
-    fn profiling() {
-        let sizes = vec![64, 128, 256, 512, 1024, 2048, 4096];
+    fn rule_110_profiling() {
+        let sizes = vec![64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
         let len = sizes.len();
         let mut rule110_times: Vec<Duration> = Vec::with_capacity(sizes.len());
+        let num_iterations = 1000;
+
+        for size in &sizes {
+            let mut bmp = BitMap::random(*size as usize);
+            let start = Instant::now();
+            for _ in 0..num_iterations {
+                bmp = rule110_step(&mut bmp);
+            }
+            let end = Instant::now();
+            rule110_times.push(end.duration_since(start));
+        }
+
+        for i in 0..len {
+            println!(
+                "N: {}, rule110_step: {}s",
+                sizes[i], rule110_times[i].as_secs_f64()/(num_iterations as f64)
+            );
+        }
+    }
+
+    #[test]
+    fn constructor_profiling() {
+        let sizes = vec![64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
+        let len = sizes.len();
         let mut constructor_times: Vec<Duration> = Vec::with_capacity(sizes.len());
         let num_iterations = 1000;
 
@@ -365,22 +416,10 @@ mod tests {
             constructor_times.push(end.duration_since(start));
         }
 
-        for size in &sizes {
-            let mut bmp = BitMap::random(*size as usize);
-
-            // rule110_step
-            let start = Instant::now();
-            for _ in 0..num_iterations {
-                bmp = rule110_step(&mut bmp);
-            }
-            let end = Instant::now();
-            rule110_times.push(end.duration_since(start));
-        }
-
         for i in 0..len {
             println!(
-                "N: {}, {} * constructor: {:?}, {} * rule110_step: {:?}",
-                sizes[i], num_iterations, constructor_times[i], num_iterations, rule110_times[i]
+                "N: {}, constructor: {:?}",
+                sizes[i], constructor_times[i].as_secs_f64()/(num_iterations as f64)
             );
         }
     }

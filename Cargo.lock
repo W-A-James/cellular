@@ -36,12 +36,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 
 [[package]]
+name = "bytemuck"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a4bad0c5981acc24bc09e532f35160f952e35422603f0563cd7a73c2c2e65a0"
+
+[[package]]
 name = "ca_110"
 version = "0.1.0"
 dependencies = [
  "clap",
  "env_logger",
  "gif",
+ "gif-dispose",
  "log",
  "progress",
  "rand",
@@ -109,6 +116,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "gif-dispose"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3449e90a378cbf471a215eedfb74fa1c18e4d221aaad9a9a2b1c52ed72ff2b35"
+dependencies = [
+ "gif",
+ "imgref",
+ "rgb",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -122,6 +140,12 @@ name = "humantime"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c1ad908cc71012b7bea4d0c53ba96a8cba9962f048fa68d143376143d863b7a"
+
+[[package]]
+name = "imgref"
+version = "1.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07c89d38187142134cb61fc7a9040ba7f7cbe29fe22bb4b702a4d9a1752fada5"
 
 [[package]]
 name = "lazy_static"
@@ -223,6 +247,15 @@ name = "regex-syntax"
 version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b181ba2dcf07aaccad5448e8ead58db5b742cf85dfe035e2227f137a539a189"
+
+[[package]]
+name = "rgb"
+version = "0.8.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "287f3c3f8236abb92d8b7e36797f19159df4b58f0a658cc3fb6dd3004b1f3bd3"
+dependencies = [
+ "bytemuck",
+]
 
 [[package]]
 name = "strsim"

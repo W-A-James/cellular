@@ -8,6 +8,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
+extern crate log;
+
 fn main() {
     let args = cli::parse_args();
     let mut init_line: BitMap;

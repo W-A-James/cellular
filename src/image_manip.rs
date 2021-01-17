@@ -16,7 +16,7 @@ enum Colour {
 fn push_pixel(vec: &mut Vec<u8>, colour: Colour) {
     vec.push(match colour {
         Colour::WHITE => 0,
-        Colour::BLACK => 1
+        Colour::BLACK => 1,
     });
 }
 
@@ -37,6 +37,7 @@ fn init_image(
         }
         *init_line = bitmap::rule110_step(&mut init_line);
     }
+    debug_assert!(image.len() == width as usize * height as usize);
     // Return new frame
     Ok(image)
 }
@@ -46,6 +47,8 @@ fn gen_next_image(
     width: u16,
     mut line: &mut BitMap,
 ) -> Result<Vec<u8>, EncodingError> {
+    // TODO: optimize this
+    // Can just drain the initial vector instead of cloning
     let mut new_image = image.clone();
     let first_row_len: usize = width as usize;
     // delete first row
@@ -53,22 +56,25 @@ fn gen_next_image(
 
     *line = bitmap::rule110_step(&mut line);
     for x in 0..width {
-        if line.get(x) == 1 {
+        if line.get(x as usize) == 1 {
             push_pixel(&mut new_image, Colour::BLACK);
         } else {
             push_pixel(&mut new_image, Colour::WHITE);
         }
     }
+    debug_assert!(new_image.len() == image.len());
 
     Ok(new_image)
 }
 
 // TODO: check if this works as intended
 fn build_frame(width: u16, height: u16, img: &Vec<u8>) -> Frame {
-    let mut frame = Frame::default();
-    frame.width = width;
-    frame.height = height;
-    frame.buffer = Cow::Borrowed(&*img);
+    let frame = Frame::from_indexed_pixels(
+        width,
+        height,
+        &Cow::Borrowed(&*img),
+        Some(0)
+        );
 
     frame
 }
@@ -119,6 +125,10 @@ pub fn build_gif(
 mod tests {
     use super::*;
 
+    fn init() {
+        env_logger::init();
+    }
+
     #[test]
     fn test_init_image() {
         let mut bmp_0 = BitMap::new(10);
@@ -157,10 +167,13 @@ mod tests {
         }
     }
 
-    use std::time::Duration;
+    use log::{info, error};
     use std::time::Instant;
+    // TODO: make this more useful
     #[test]
     fn test_build_gif() {
+        init();
+        // Ensure that all images end in 0x3b
         let sizes = vec![
             (10, 10),
             (20, 20),
@@ -172,7 +185,7 @@ mod tests {
             (1280, 1280),
             (2560, 2560),
             (5120, 5120),
-            (10240, 10240)
+            (10240, 10240),
         ];
 
         for size in sizes {
@@ -185,19 +198,68 @@ mod tests {
             let start = Instant::now();
             build_gif(w, h, steps, &mut bmp, file_name.as_str(), None).unwrap();
             let end = Instant::now();
-            println!("w: {}, h: {}, steps: {}, time_elapsed: {:?}\n",
-                w, h, steps, end.duration_since(start));
+            info!(
+                "{}",
+                format!(
+                    "w: {}, h: {}, steps: {}, time_elapsed: {:?}\n",
+                    w,
+                    h,
+                    steps,
+                    end.duration_since(start)
+                )
+            );
 
+            info!("{}", format!("Attempting to read {}", file_name));
+            let file = match File::open(file_name.as_str()) {
+                Ok(f) => {
+                    info!("Successfully opened {}", file_name);
+                    f
+                },
+                Err(e) => {
+                    info!("Error: {:?}", e);
+                    panic!(e);
+                }
+            };
+            let mut gif_opts = gif::DecodeOptions::new();
+            gif_opts.set_color_output(gif::ColorOutput::Indexed);
+            let mut decoder = match gif_opts.read_info(file) {
+                Ok(d) => {
+                    info!("Successfully created decoder!");
+                    d
+                },
+                Err(e) => {
+                    error!("Error: {:?}", e);
+                    panic!(e);
+                }
+            };
+            let _screen = gif_dispose::Screen::new_decoder(&decoder);
 
-            println!("Attempting to read {}", file_name);
-            let file = File::open(file_name.as_str()).unwrap();
-            let mut decoder = gif::Decoder::new(file).unwrap();
             let mut i = 0;
-            while let Some(frame) = decoder.read_next_frame().unwrap() {
-                println!("Successfully read frame {}", i);
+            loop {
+                let frame = decoder.read_next_frame();
+                let mut exit_loop = false;
+                match frame {
+                    Ok(img) => {
+                        info!("{}", format!("Successfully read frame {}\n", i));
+                        match img {
+                            Some(_i) => {}
+                            None => {
+                                exit_loop = true;
+                            }
+                        };
+                    }
+                    Err(e) => {
+                        error!("{}", format!("Failed to read frame {}: {:?}", i, e));
+                        panic!("{}", e);
+                    }
+                }
                 i += 1;
+
+                if exit_loop {
+                    break;
+                }
             }
-            println!("Successfully read {}\n", file_name);
+            info!("{}", format!("Successfully read {}\n", file_name));
         }
     }
 }
