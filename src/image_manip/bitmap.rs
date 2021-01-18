@@ -3,12 +3,12 @@ use rand::Rng;
 #[derive(Debug)]
 pub struct BitMap {
     vals: Vec<u64>, // Vector of u64s
-    len: usize,     // number of accessible bits
+    len: u64,     // number of accessible bits
 }
 
 // Arbitrary size bitmap where most significant bit is leftmost
 impl BitMap {
-    pub fn new(length: usize) -> BitMap {
+    pub fn new(length: u64) -> BitMap {
         if length == 0 {
             panic!("Cannot create 0-length bit-map");
         }
@@ -17,7 +17,7 @@ impl BitMap {
         if length % 64 != 0 {
             num_u64s += 1;
         }
-        let mut new_vec: Vec<u64> = Vec::with_capacity(num_u64s);
+        let mut new_vec: Vec<u64> = Vec::with_capacity(num_u64s as usize);
 
         for _ in 0..num_u64s {
             new_vec.push(0);
@@ -29,7 +29,7 @@ impl BitMap {
         }
     }
 
-    pub fn random(length: usize) -> BitMap {
+    pub fn random(length: u64) -> BitMap {
         if length == 0 {
             panic!("Cannot create 0-length bit-map");
         }
@@ -39,7 +39,7 @@ impl BitMap {
         if length % 64 != 0 {
             num_u64s += 1;
         }
-        let mut new_vec: Vec<u64> = Vec::with_capacity(num_u64s);
+        let mut new_vec: Vec<u64> = Vec::with_capacity(num_u64s as usize);
 
         for _ in 0..num_u64s {
             let x: u64 = rng.gen();
@@ -53,49 +53,49 @@ impl BitMap {
     }
 
     // if bit_num is less than len, then return bit at that position, otherwise panic
-    pub fn get(&self, bit_num: usize) -> u8 {
+    pub fn get(&self, bit_num: u64) -> u8 {
         if bit_num >= self.len {
             panic!("Invalid bit index! Must be less than {}", self.len);
         }
         let index = bit_num / 64;
-        let offset: usize = bit_num % 64;
+        let offset = bit_num % 64;
 
-        if (self.vals[index] & (1 << offset)) != 0 {
+        if (self.vals[index as usize] & (1 << offset)) != 0 {
             1
         } else {
             0
         }
     }
 
-    pub fn set(&mut self, bit_num: usize) {
+    pub fn set(&mut self, bit_num: u64) {
         if bit_num >= self.len {
             panic!("Invalid bit index! Must be less than {}", self.len);
         }
         let index = bit_num / 64;
-        let offset: usize = bit_num % 64;
+        let offset = bit_num % 64;
 
-        self.vals[index] |= 1 << offset;
+        self.vals[index as usize] |= 1 << offset;
     }
 
-    pub fn set_vec_val(&mut self, index: usize, val: u64) {
-        if index >= self.vals.len() {
+    pub fn set_vec_val(&mut self, index: u64, val: u64) {
+        if index >= self.vals.len() as u64{
             panic!("Error! Vector overflow");
         }
-        self.vals[index] = val;
+        self.vals[index as usize] = val;
     }
 
-    pub fn unset(&mut self, bit_num: usize) {
+    pub fn unset(&mut self, bit_num: u64) {
         if bit_num >= self.len {
             panic!("Invalid bit index! Must be less than {}", self.len);
         }
 
         let index = bit_num / 64;
-        let offset: usize = bit_num % 64;
+        let offset= bit_num % 64;
 
-        self.vals[index] &= !(1 << offset);
+        self.vals[index as usize] &= !(1 << offset);
     }
 
-    pub fn size(&self) -> usize {
+    pub fn size(&self) -> u64{
         self.len
     }
 
@@ -104,9 +104,10 @@ impl BitMap {
     }
 
     pub fn to_bit_vec(&self) -> Vec<u8> {
-        let mut bit_vec: Vec<u8> = Vec::with_capacity(self.len);
+        let mut bit_vec: Vec<u8> = Vec::with_capacity(self.len as usize);
         for i in 0..self.len {
-            bit_vec[i] = self.get(i);
+            let i_usize = i as usize;
+            bit_vec[i_usize] = self.get(i);
         }
         return bit_vec;
     }
@@ -114,34 +115,46 @@ impl BitMap {
 
 // TODO: parallelize this
 pub fn rule110_step(bmp: &mut BitMap) -> BitMap {
+    enum Offset {
+        PLUS_ONE,
+        ZERO,
+        MINUS_ONE,
+    }
     let len = bmp.size();
     let mut rv = BitMap::new(len);
 
     for i in 0..len {
         let mut flags: u8 = 0;
-        // Set middle flag
-        if bmp.get(i) == 1 {
-            flags |= 0b010;
-        }
-
-        // Set high flag
-        let left_index = (i + 1) % len;
-        if bmp.get(left_index) == 1 {
-            flags |= 0b100;
-        }
-
-        // Set low flag
-        let right_index = if i == 0 { len - 1 } else { i - 1 };
-
-        if bmp.get(right_index) == 1 {
-            flags |= 0b001;
+        for offset in [Offset::PLUS_ONE, Offset::ZERO, Offset::MINUS_ONE].iter() {
+            let mut flag_mask = 0;
+            let index = match offset {
+                Offset::PLUS_ONE  => {
+                    flag_mask = 0b100;
+                    (i + 1) % bmp.size()
+                },
+                Offset::ZERO      => {
+                    flag_mask = 0b010;
+                    i
+                },
+                Offset::MINUS_ONE => {
+                    flag_mask = 0b001;
+                    if i == 0 {
+                        len - 1
+                    } else {
+                        i - 1
+                    }
+                }
+            };
+            if bmp.get(index) == 1 {
+                flags |= flag_mask;
+            }
         }
 
         let new_val = 110 & (1 << flags);
 
         if new_val != 0 {
             rv.set(i);
-        }
+        } 
     }
     rv
 }
@@ -184,21 +197,21 @@ mod tests {
     #[should_panic]
     fn test_get_with_out_of_bounds_val() {
         let bmp = BitMap::random(10);
-        bmp.get(10 as usize);
+        bmp.get(10);
     }
 
     #[test]
     #[should_panic]
     fn test_set_with_out_of_bounds_val() {
         let mut bmp = BitMap::random(10);
-        bmp.set(10 as usize);
+        bmp.set(10);
     }
 
     #[test]
     #[should_panic]
     fn test_unset_with_out_of_bounds_val() {
         let mut bmp = BitMap::random(10);
-        bmp.unset(10 as usize);
+        bmp.unset(10);
     }
 
     #[test]
@@ -382,7 +395,7 @@ mod tests {
         let num_iterations = 1000;
 
         for size in &sizes {
-            let mut bmp = BitMap::random(*size as usize);
+            let mut bmp = BitMap::random(*size);
             let start = Instant::now();
             for _ in 0..num_iterations {
                 bmp = rule110_step(&mut bmp);
@@ -401,7 +414,7 @@ mod tests {
 
     #[test]
     fn constructor_profiling() {
-        let sizes = vec![64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
+        let sizes: Vec<u64> = vec![64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
         let len = sizes.len();
         let mut constructor_times: Vec<Duration> = Vec::with_capacity(sizes.len());
         let num_iterations = 1000;
@@ -409,7 +422,7 @@ mod tests {
         for size in &sizes {
             let start = Instant::now();
             for _ in 0..num_iterations {
-                let _bmp = BitMap::random(*size as usize);
+                let _bmp = BitMap::random(*size);
             }
             let end = Instant::now();
 
