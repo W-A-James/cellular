@@ -87,9 +87,10 @@ pub fn build_gif(
     file_name: &str,
     progress_bar_tx_wrap: Option<Sender<u32>>,
 ) -> Result<(), EncodingError> {
-    let file = File::create(file_name)?;
+    let mut file = File::create(file_name)?;
     // Set with two colours: white, black
-    let mut encoder = Encoder::new(file, width, height, &[0xFF, 0xFF, 0xFF, 0, 0, 0]).unwrap();
+    let color_map = &[0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00];
+    let mut encoder = Encoder::new(&mut file, width, height, color_map).unwrap();
     encoder.set_repeat(Repeat::Infinite).unwrap();
     // build initial frame
     let mut img = init_image(width, height, &mut init_line).unwrap();
@@ -232,17 +233,31 @@ mod tests {
                     panic!(e);
                 }
             };
-            let _screen = gif_dispose::Screen::new_decoder(&decoder);
+            let mut screen = gif_dispose::Screen::new_decoder(&decoder);
 
             let mut i = 0;
-            loop {
+            let mut exit_loop = false;
+            while !exit_loop {
+                assert!(decoder.width() == w);
+                assert!(decoder.height() == h);
+                let palette = decoder.global_palette().unwrap();
+                // Make sure that global palette is valid
+                // [0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00]
+                for j in 0..3 {
+                    assert!(0xFF == palette[j]); 
+                    assert!(0x00 == palette[5 - j]);
+                }
                 let frame = decoder.read_next_frame();
-                let mut exit_loop = false;
                 match frame {
                     Ok(img) => {
                         info!("{}", format!("Successfully read frame {}\n", i));
                         match img {
-                            Some(_i) => {}
+                            Some(image) => {
+                                assert!(image.width == w);
+                                assert!(image.height == h);
+
+                                screen.blit_frame(&image);
+                            }
                             None => {
                                 exit_loop = true;
                             }
@@ -250,14 +265,10 @@ mod tests {
                     }
                     Err(e) => {
                         error!("{}", format!("Failed to read frame {}: {:?}", i, e));
-                        panic!("{}", e);
+                        panic!("{:?}", e);
                     }
                 }
                 i += 1;
-
-                if exit_loop {
-                    break;
-                }
             }
             info!("{}", format!("Successfully read {}\n", file_name));
         }
