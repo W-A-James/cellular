@@ -25,11 +25,12 @@ fn init_image(
     height: u16,
     mut init_line: &mut BitMap,
 ) -> Result<Vec<u8>, EncodingError> {
-    let mut image: Vec<u8> = Vec::with_capacity((width as usize) * (height as usize));
+    let num_pixels:usize = (width as usize) * (height as usize);
+    let mut image: Vec<u8> = Vec::with_capacity(num_pixels);
     *init_line = bitmap::rule110_step(&mut init_line);
     for _y in 0..height {
         for x in 0..width {
-            if init_line.get(x as usize) == 1 {
+            if init_line.get(x.into()) == 1 {
                 push_pixel(&mut image, Colour::BLACK);
             } else {
                 push_pixel(&mut image, Colour::WHITE);
@@ -37,7 +38,7 @@ fn init_image(
         }
         *init_line = bitmap::rule110_step(&mut init_line);
     }
-    debug_assert!(image.len() == width as usize * height as usize);
+    debug_assert!(image.len() == num_pixels);
     // Return new frame
     Ok(image)
 }
@@ -50,13 +51,13 @@ fn gen_next_image(
     // TODO: optimize this
     // Can just drain the initial vector instead of cloning
     let mut new_image = image.clone();
-    let first_row_len: usize = width as usize;
+    let first_row_len:usize = width.into();
     // delete first row
     new_image.drain(0..first_row_len);
 
     *line = bitmap::rule110_step(&mut line);
     for x in 0..width {
-        if line.get(x as usize) == 1 {
+        if line.get(x.into()) == 1 {
             push_pixel(&mut new_image, Colour::BLACK);
         } else {
             push_pixel(&mut new_image, Colour::WHITE);
@@ -125,6 +126,7 @@ pub fn build_gif(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::convert::TryInto;
 
     fn init() {
         env_logger::init();
@@ -194,7 +196,7 @@ mod tests {
             let h = size.1 as u16;
             let steps = 10;
             let file_name = format!("test_{}x{}.gif", w, h);
-            let mut bmp = BitMap::random(w as usize);
+            let mut bmp = BitMap::random(w.into());
 
             let start = Instant::now();
             build_gif(w, h, steps, &mut bmp, file_name.as_str(), None).unwrap();
@@ -253,8 +255,8 @@ mod tests {
                         info!("{}", format!("Successfully read frame {}\n", i));
                         match img {
                             Some(image) => {
-                                assert!(image.width == w);
-                                assert!(image.height == h);
+                                assert!(image.width == w.try_into().unwrap());
+                                assert!(image.height == h.try_into().unwrap());
 
                                 screen.blit_frame(&image);
                             }

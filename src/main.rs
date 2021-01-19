@@ -20,9 +20,9 @@ fn main() {
     );
 
     if args.random {
-        init_line = BitMap::random(args.width as usize);
+        init_line = BitMap::random(args.width.into());
     } else {
-        init_line = BitMap::new(args.width as usize);
+        init_line = BitMap::new(args.width.into());
     }
     let steps = args.steps;
     let output: String = args.output.clone();
