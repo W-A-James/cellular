@@ -66,12 +66,10 @@ fn gen_next_image(
 
 // TODO: check if this works as intended
 fn build_frame(width: u16, height: u16, img: &[u8]) -> Frame {
-    let frame = Frame::from_indexed_pixels(
-        width,
-        height,
-        &Cow::Borrowed(&*img),
-        Some(0)
-        );
+    let mut frame = Frame::default();
+    frame.width = width;
+    frame.height = height;
+    frame.buffer = Cow::Borrowed(&*img);
 
     frame
 }
