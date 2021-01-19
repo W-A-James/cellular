@@ -17,11 +17,7 @@ impl BitMap {
         if length % 64 != 0 {
             num_u64s += 1;
         }
-        let mut new_vec: Vec<u64> = Vec::with_capacity(num_u64s as usize);
-
-        for _ in 0..num_u64s {
-            new_vec.push(0);
-        }
+        let new_vec: Vec<u64> = vec![0; num_u64s as usize];
 
         BitMap {
             vals: new_vec,
@@ -109,39 +105,35 @@ impl BitMap {
             let i_usize = i as usize;
             bit_vec[i_usize] = self.get(i);
         }
-        return bit_vec;
+        bit_vec
     }
 }
 
 // TODO: parallelize this
 pub fn rule110_step(bmp: &mut BitMap) -> BitMap {
     enum Offset {
-        PLUS_ONE,
-        ZERO,
-        MINUS_ONE,
+        PlusOne,
+        Zero,
+        MinusOne,
     }
     let len = bmp.size();
     let mut rv = BitMap::new(len);
 
     for i in 0..len {
         let mut flags: u8 = 0;
-        for offset in [Offset::PLUS_ONE, Offset::ZERO, Offset::MINUS_ONE].iter() {
-            let mut flag_mask = 0;
-            let index = match offset {
-                Offset::PLUS_ONE  => {
-                    flag_mask = 0b100;
-                    (i + 1) % bmp.size()
+        for offset in [Offset::PlusOne, Offset::Zero, Offset::MinusOne].iter() {
+            let (flag_mask, index) = match offset {
+                Offset::PlusOne  => {
+                    (0b100, (i + 1) % bmp.size())
                 },
-                Offset::ZERO      => {
-                    flag_mask = 0b010;
-                    i
+                Offset::Zero => {
+                    (0b010, i)
                 },
-                Offset::MINUS_ONE => {
-                    flag_mask = 0b001;
+                Offset::MinusOne => {
                     if i == 0 {
-                        len - 1
+                        (0b001, len - 1)
                     } else {
-                        i - 1
+                        (0b001, i - 1)
                     }
                 }
             };
