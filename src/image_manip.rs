@@ -44,32 +44,28 @@ fn init_image(
 }
 
 fn gen_next_image(
-    image: &Vec<u8>,
+    image: &mut Vec<u8>,
     width: u16,
     mut line: &mut BitMap,
-) -> Result<Vec<u8>, EncodingError> {
-    // TODO: optimize this
-    // Can just drain the initial vector instead of cloning
-    let mut new_image = image.clone();
+) -> Result<(), EncodingError> {
     let first_row_len:usize = width.into();
     // delete first row
-    new_image.drain(0..first_row_len);
+    image.drain(0..first_row_len);
 
     *line = bitmap::rule110_step(&mut line);
     for x in 0..width {
         if line.get(x.into()) == 1 {
-            push_pixel(&mut new_image, Colour::BLACK);
+            push_pixel(image, Colour::BLACK);
         } else {
-            push_pixel(&mut new_image, Colour::WHITE);
+            push_pixel(image, Colour::WHITE);
         }
     }
-    debug_assert!(new_image.len() == image.len());
 
-    Ok(new_image)
+    Ok(())
 }
 
 // TODO: check if this works as intended
-fn build_frame(width: u16, height: u16, img: &Vec<u8>) -> Frame {
+fn build_frame(width: u16, height: u16, img: &[u8]) -> Frame {
     let frame = Frame::from_indexed_pixels(
         width,
         height,
@@ -99,34 +95,34 @@ pub fn build_gif(
 
     encoder.write_frame(&frame).unwrap();
 
-    if progress_bar_tx_wrap.is_some() {
-        let progress_bar_tx = progress_bar_tx_wrap.unwrap();
-        // iterate over other frames
-        for s in 1..steps {
-            let new_image = gen_next_image(&mut img, width, &mut init_line).unwrap();
-            let frame = build_frame(width, height, &new_image);
-            encoder.write_frame(&frame).unwrap();
-            img = new_image;
-            // Update progress bar
-            progress_bar_tx.send(s).unwrap();
+    match progress_bar_tx_wrap {
+        Some(progress_bar_tx) => {
+            // iterate over other frames
+            for s in 1..steps {
+                gen_next_image(&mut img, width, &mut init_line).unwrap();
+                let frame = build_frame(width, height, &img);
+                encoder.write_frame(&frame).unwrap();
+                // Update progress bar
+                progress_bar_tx.send(s).unwrap();
+            }
+            // Finish updating progress bar
+            progress_bar_tx.send(steps - 1).unwrap();
+        },
+        None => {
+            for _ in 1..steps {
+                gen_next_image(&mut img, width, &mut init_line).unwrap();
+                let frame = build_frame(width, height, &img);
+                encoder.write_frame(&frame).unwrap();
+            }
         }
-        // Finish updating progress bar
-        progress_bar_tx.send(steps - 1).unwrap();
-    } else {
-        for _ in 1..steps {
-            let new_image = gen_next_image(&mut img, width, &mut init_line).unwrap();
-            let frame = build_frame(width, height, &new_image);
-            encoder.write_frame(&frame).unwrap();
-            img = new_image;
-        }
-    }
+    } 
+    
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::convert::TryInto;
 
     fn init() {
         env_logger::init();
@@ -158,8 +154,8 @@ mod tests {
         for _ in 0..11 {
             bmp_1 = bitmap::rule110_step(&mut bmp_1);
         }
-        let img = init_image(10, 11, &mut bmp_0).unwrap();
-        gen_next_image(&img, 10, &mut bmp_0).unwrap();
+        let mut img = init_image(10, 11, &mut bmp_0).unwrap();
+        gen_next_image(&mut img, 10, &mut bmp_0).unwrap();
 
         let vec_0 = bmp_0.get_vec();
         let vec_1 = bmp_1.get_vec();
@@ -255,10 +251,10 @@ mod tests {
                         info!("{}", format!("Successfully read frame {}\n", i));
                         match img {
                             Some(image) => {
-                                assert!(image.width == w.try_into().unwrap());
-                                assert!(image.height == h.try_into().unwrap());
+                                assert!(image.width == w);
+                                assert!(image.height == h);
 
-                                screen.blit_frame(&image);
+                                screen.blit_frame(&image).unwrap();
                             }
                             None => {
                                 exit_loop = true;
