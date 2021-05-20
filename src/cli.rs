@@ -33,7 +33,7 @@ pub fn parse_args() -> CLIArgs {
     let matches = App::new("CA_110")
         .version("1.0")
         .author("Warren A James <warren_a_james@outlook.com>")
-        .about("A simple command line cellular automaton animation creator")
+        .about("A simple command-line based cellular automaton animation creator")
         .arg(
             Arg::with_name("width")
                 .long("width")

@@ -14,11 +14,6 @@ fn main() {
     let args = cli::parse_args();
     let mut init_line: BitMap;
 
-    println!(
-        "width: {}\nheight: {}\noutfile: {}\nsteps: {}\nrandom: {}",
-        args.width, args.height, args.output, args.steps, args.random
-    );
-
     if args.random {
         init_line = BitMap::random(args.width.into());
     } else {
@@ -44,6 +39,7 @@ fn main() {
         };
     });
 
+    // TODO: Make build_gif not be aware of the progress bar
     match build_gif(
         args.width,
         args.height,
@@ -51,6 +47,7 @@ fn main() {
         &mut init_line,
         args.output.as_str(),
         Some(tx),
+        args.rule,
     ) {
         Ok(_) => {}
         Err(_) => {

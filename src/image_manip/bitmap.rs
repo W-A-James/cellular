@@ -109,8 +109,7 @@ impl BitMap {
     }
 }
 
-// TODO: parallelize this
-pub fn rule110_step(bmp: &mut BitMap) -> BitMap {
+pub fn rule_step(bmp: &mut BitMap, rule: u8) -> BitMap {
     enum Offset {
         PlusOne,
         Zero,
@@ -138,7 +137,7 @@ pub fn rule110_step(bmp: &mut BitMap) -> BitMap {
             }
         }
 
-        let new_val = 110 & (1 << flags);
+        let new_val = rule & (1 << flags);
 
         if new_val != 0 {
             rv.set(i);
