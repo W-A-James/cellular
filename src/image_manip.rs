@@ -19,6 +19,13 @@ fn push_pixel(vec: &mut Vec<u8>, colour: Colour) {
     });
 }
 
+fn get_pixel(colour: Colour) -> Rgba<u8> {
+    match colour {
+        Colour::WHITE => Rgba([255, 255, 255, 1]),
+        Colour::BLACK => Rgba([0, 0, 0, 1]),
+    }
+}
+
 pub fn init_image(
     width: u16,
     height: u16,

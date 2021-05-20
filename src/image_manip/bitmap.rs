@@ -1,9 +1,9 @@
+use bit_vec::BitVec;
 use rand::Rng;
 
 #[derive(Debug)]
 pub struct BitMap {
-    vals: Vec<u64>, // Vector of u64s
-    len: u64,       // number of accessible bits
+    bit_vector: BitVec,
 }
 
 // Arbitrary size bitmap where most significant bit is leftmost
@@ -13,15 +13,8 @@ impl BitMap {
             panic!("Cannot create 0-length bit-map");
         }
 
-        let mut num_u64s = length / 64;
-        if length % 64 != 0 {
-            num_u64s += 1;
-        }
-        let new_vec: Vec<u64> = vec![0; num_u64s as usize];
-
         BitMap {
-            vals: new_vec,
-            len: length,
+            bit_vector: BitVec::from_elem(length, false),
         }
     }
 
@@ -30,74 +23,60 @@ impl BitMap {
             panic!("Cannot create 0-length bit-map");
         }
         let mut rng = rand::thread_rng();
-        let mut num_u64s = length / 64;
+        let bit_vector = BitVec::from_fn(length, |_| rng.gen());
 
-        if length % 64 != 0 {
-            num_u64s += 1;
-        }
-        let mut new_vec: Vec<u64> = Vec::with_capacity(num_u64s as usize);
-
-        for _ in 0..num_u64s {
-            let x: u64 = rng.gen();
-            new_vec.push(x);
-        }
-
-        BitMap {
-            vals: new_vec,
-            len: length,
-        }
+        BitMap { bit_vector }
     }
 
     // if bit_num is less than len, then return bit at that position, otherwise panic
-    pub fn get(&self, bit_num: u64) -> u8 {
-        if bit_num >= self.len {
-            panic!("Invalid bit index! Must be less than {}", self.len);
-        }
-        let index = bit_num / 64;
-        let offset = bit_num % 64;
-
-        if (self.vals[index as usize] & (1 << offset)) != 0 {
-            1
-        } else {
-            0
+    pub fn get(&self, bit_num: usize) -> u8 {
+        match self.bit_vector.get(bit_num) {
+            Some(boolean) => {
+                if boolean {
+                    1
+                } else { 0
+                }
+            }
+            None => {
+                panic!(
+                    "Invalid bit index! Must be less than {}",
+                    self.bit_vector.len()
+                )
+            }
         }
     }
 
-    pub fn set(&mut self, bit_num: u64) {
-        if bit_num >= self.len {
-            panic!("Invalid bit index! Must be less than {}", self.len);
+    pub fn set(&mut self, bit_num: usize) {
+        if bit_num >= self.bit_vector.len() {
+            panic!(
+                "Invalid bit index! Must be less than {}",
+                self.bit_vector.len()
+            );
         }
-        let index = bit_num / 64;
-        let offset = bit_num % 64;
-
-        self.vals[index as usize] |= 1 << offset;
+        self.bit_vector.set(bit_num, true);
     }
 
-    pub fn set_vec_val(&mut self, index: u64, val: u64) {
-        if index >= self.vals.len() as u64 {
-            panic!("Error! Vector overflow");
+    pub fn unset(&mut self, bit_num: usize) {
+        if bit_num >= self.bit_vector.len() {
+            panic!(
+                "Invalid bit index! Must be less than {}",
+                self.bit_vector.len()
+            );
         }
-        self.vals[index as usize] = val;
+        self.bit_vector.set(bit_num, false);
     }
 
-    pub fn unset(&mut self, bit_num: u64) {
-        if bit_num >= self.len {
-            panic!("Invalid bit index! Must be less than {}", self.len);
+    pub fn size(&self) -> usize {
+        self.bit_vector.len()
+>>>>>>> Started refactoring to use bit-vec crate
+    }
+
+    pub fn get_vec(&self) -> Vec<bool> {
+        let mut rv: Vec<bool> = Vec::with_capacity(self.bit_vector.len());
+        for v in self.bit_vector.iter() {
+            rv.push(v);
         }
-
-        let index = bit_num / 64;
-        let offset = bit_num % 64;
-        println!("bit_num: {}\nindex: {}\noffset: {}", bit_num, index, offset);
-
-        self.vals[index as usize] &= !(1 << offset);
-    }
-
-    pub fn size(&self) -> u64 {
-        self.len
-    }
-
-    pub fn get_vec(&self) -> Vec<u64> {
-        self.vals.clone()
+        rv
     }
 
     pub fn to_bit_vec(&self) -> Vec<u8> {
