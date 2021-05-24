@@ -1,5 +1,6 @@
 use bit_vec::BitVec;
 use rand::Rng;
+use std::convert::TryInto;
 
 #[derive(Debug)]
 pub struct BitMap {
@@ -14,7 +15,7 @@ impl BitMap {
         }
 
         BitMap {
-            bit_vector: BitVec::from_elem(length, false),
+            bit_vector: BitVec::from_elem(length.try_into().unwrap(), false),
         }
     }
 
@@ -23,7 +24,7 @@ impl BitMap {
             panic!("Cannot create 0-length bit-map");
         }
         let mut rng = rand::thread_rng();
-        let bit_vector = BitVec::from_fn(length, |_| rng.gen());
+        let bit_vector = BitVec::from_fn(length.try_into().unwrap(), |_| rng.gen());
 
         BitMap { bit_vector }
     }
@@ -34,7 +35,8 @@ impl BitMap {
             Some(boolean) => {
                 if boolean {
                     1
-                } else { 0
+                } else {
+                    0
                 }
             }
             None => {
@@ -68,7 +70,6 @@ impl BitMap {
 
     pub fn size(&self) -> usize {
         self.bit_vector.len()
->>>>>>> Started refactoring to use bit-vec crate
     }
 
     pub fn get_vec(&self) -> Vec<bool> {
@@ -80,8 +81,8 @@ impl BitMap {
     }
 
     pub fn to_bit_vec(&self) -> Vec<u8> {
-        let mut bit_vec: Vec<u8> = Vec::with_capacity(self.len as usize);
-        for i in 0..self.len {
+        let mut bit_vec: Vec<u8> = Vec::with_capacity(self.bit_vector.len() as usize);
+        for i in 0..self.bit_vector.len() {
             bit_vec.push(self.get(i));
         }
         bit_vec
@@ -95,7 +96,7 @@ pub fn rule_step(bmp: &mut BitMap, rule: u8) -> BitMap {
         MinusOne,
     }
     let len = bmp.size();
-    let mut rv = BitMap::new(len);
+    let mut rv = BitMap::new(len.try_into().unwrap());
 
     for i in 0..len {
         let mut flags: u8 = 0;

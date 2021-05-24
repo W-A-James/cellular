@@ -1,5 +1,5 @@
-pub mod bitmap;
-pub use bitmap::BitMap;
+mod bitmap;
+use bitmap::BitMap;
 
 use gif::EncodingError;
 use gif::{Encoder, Frame, Repeat};
@@ -17,13 +17,6 @@ fn push_pixel(vec: &mut Vec<u8>, colour: Colour) {
         Colour::WHITE => 0,
         Colour::BLACK => 1,
     });
-}
-
-fn get_pixel(colour: Colour) -> Rgba<u8> {
-    match colour {
-        Colour::WHITE => Rgba([255, 255, 255, 1]),
-        Colour::BLACK => Rgba([0, 0, 0, 1]),
-    }
 }
 
 pub fn init_image(
