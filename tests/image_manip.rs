@@ -1,21 +1,28 @@
 #[cfg(test)]
 mod image_manip_tests {
-    use ca_110::image_manip::*;
+    use cellular::image_manip::*;
     use std::fs::File;
 
-    fn init() {
-        env_logger::init();
+    fn init_logger() {
+        use simple_logger::SimpleLogger;
+        match SimpleLogger::new().init() {
+            Ok(_) => {}
+            Err(e) => {
+                panic!("Error: {}", e)
+            }
+        }
     }
 
     #[test]
     fn test_init_image() {
         let mut bmp_0 = BitMap::new(10);
         let mut bmp_1 = BitMap::new(10);
+        let rule = 110;
 
         for _ in 0..10 {
-            bmp_1 = bitmap::rule110_step(&mut bmp_1);
+            bmp_1 = bitmap::rule_step(&mut bmp_1, rule);
         }
-        init_image(10, 11, &mut bmp_0).unwrap();
+        init_image(10, 11, &mut bmp_0, rule).unwrap();
 
         let vec_0 = bmp_0.get_vec();
         let vec_1 = bmp_1.get_vec();
@@ -30,11 +37,12 @@ mod image_manip_tests {
     fn test_gen_next_image() {
         let mut bmp_0 = BitMap::new(10);
         let mut bmp_1 = BitMap::new(10);
+        let rule = 110;
         for _ in 0..11 {
-            bmp_1 = bitmap::rule110_step(&mut bmp_1);
+            bmp_1 = bitmap::rule_step(&mut bmp_1, rule);
         }
-        let mut img = init_image(10, 11, &mut bmp_0).unwrap();
-        gen_next_image(&mut img, 10, 11, &mut bmp_0).unwrap();
+        let mut img = init_image(10, 11, &mut bmp_0, rule).unwrap();
+        gen_next_image(&mut img, 10, 11, &mut bmp_0, rule).unwrap();
 
         let vec_0 = bmp_0.get_vec();
         let vec_1 = bmp_1.get_vec();
@@ -45,7 +53,8 @@ mod image_manip_tests {
         }
     }
 
-    use log::{error, info};
+    use log::{error, info, trace};
+    use std::fs;
     use std::time::Instant;
 
     fn set_half(bmp: &mut BitMap) {
@@ -53,9 +62,11 @@ mod image_manip_tests {
             bmp.set(i);
         }
     }
+
     #[test]
     fn test_build_gif() {
-        init();
+        init_logger();
+        let rule = 110;
         // Ensure that all images end in 0x3b
         let sizes = vec![
             (10, 10),
@@ -64,9 +75,6 @@ mod image_manip_tests {
             (80, 80),
             (160, 160),
             (320, 320),
-            (640, 640),
-            (1280, 1280),
-            (2560, 2560),
         ];
 
         for size in sizes {
@@ -79,17 +87,17 @@ mod image_manip_tests {
             println!("{:#?}", bmp.to_bit_vec());
 
             // Build gif and write to file
-            build_gif(w, h, steps, &mut bmp, file_name.as_str(), None).unwrap();
+            build_gif(w, h, steps, &mut bmp, file_name.as_str(), None, rule).unwrap();
 
             // Open newly written file
-            info!("{}", format!("Attempting to read {}", file_name));
+            trace!("{}", format!("Attempting to read {}", file_name));
             let file = match File::open(file_name.as_str()) {
                 Ok(f) => {
-                    info!("Successfully opened {}", file_name);
+                    trace!("Successfully opened {}", file_name);
                     f
                 }
                 Err(e) => {
-                    info!("Error: {:?}", e);
+                    trace!("Error: {:?}", e);
                     panic!(e);
                 }
             };
@@ -97,7 +105,7 @@ mod image_manip_tests {
             gif_opts.set_color_output(gif::ColorOutput::Indexed);
             let mut decoder = match gif_opts.read_info(file) {
                 Ok(d) => {
-                    info!("Successfully created decoder!");
+                    trace!("Successfully created decoder!");
                     d
                 }
                 Err(e) => {
@@ -123,7 +131,7 @@ mod image_manip_tests {
                 let frame = decoder.read_next_frame();
                 match frame {
                     Ok(img) => {
-                        info!("{}", format!("Successfully read frame {}\n", i));
+                        trace!("{}", format!("Successfully read frame {}\n", i));
                         match img {
                             Some(image) => {
                                 assert!(image.width == w);
@@ -154,29 +162,36 @@ mod image_manip_tests {
                 }
                 i += 1;
             }
-            info!("{}", format!("Successfully read {}\n", file_name));
+            trace!("{}", format!("Successfully read {}\n", file_name));
+            fs::remove_file(file_name).unwrap();
         }
     }
 }
 
 #[cfg(test)]
 mod bitmap_tests {
-    use ca_110::image_manip::bitmap::*;
+    fn init_logger() {
+        use simple_logger::SimpleLogger;
+        SimpleLogger::new().init().unwrap();
+    }
+
+    use cellular::image_manip::bitmap::*;
+    const RULE: u8 = 110;
+    fn get_integer_value(bv: &BitMap) -> u64 {
+        let mut rv: u64 = 0;
+        for i in 0..bv.size() {
+            let val: u64 = bv.get(i) as u64;
+            rv += (val << i) as u64;
+        }
+
+        rv
+    }
     #[test]
     fn test_bitmap_constructor() {
-        let mut bmp = BitMap::new(55);
+        let bmp = BitMap::new(55);
         assert!(bmp.size() == 55);
         let vec = bmp.get_vec();
-        assert!(vec.len() == 1);
-        bmp = BitMap::new(1500);
-        assert!(bmp.size() == 1500);
-        let vec = bmp.get_vec();
-        assert!(vec.len() == 24);
-
-        bmp = BitMap::new(64);
-        assert!(bmp.size() == 64);
-        let vec = bmp.get_vec();
-        assert!(vec.len() == 1);
+        assert!(vec.len() == 55);
     }
 
     #[test]
@@ -218,9 +233,8 @@ mod bitmap_tests {
         let mut cur_val: u64 = 0;
         for i in 0..64 {
             bmp.set(i);
-            let vec = bmp.get_vec();
             cur_val += 2u64.pow(i as u32);
-            assert!(vec[0] == cur_val);
+            assert!(get_integer_value(&bmp) == cur_val);
         }
     }
 
@@ -235,159 +249,178 @@ mod bitmap_tests {
         for i in 0..64 {
             bmp.unset(i);
             cur_val -= 2u64.pow(i as u32);
-            let vec = bmp.get_vec();
-            assert!(vec[0] == cur_val);
+            assert!(get_integer_value(&bmp) == cur_val);
         }
     }
 
     #[test]
-    fn test_rule110_step_normal_cases() {
+    fn test_rule_step_normal_cases() {
         let mut bmp = BitMap::new(3);
         // 000
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(1) == 0);
         // 001
         let mut bmp = BitMap::new(3);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(1) == 1);
         // 010
         let mut bmp = BitMap::new(3);
         bmp.set(1);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(1) == 1);
         // 011
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(1) == 1);
         // 100
         let mut bmp = BitMap::new(3);
         bmp.set(2);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(1) == 0);
         // 101
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(1) == 1);
         // 110
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(1);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(1) == 1);
         // 111
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(1) == 0);
     }
 
     #[test]
-    fn test_rule110_step_wrap_around_cases() {
+    fn test_rule_step_wrap_around_cases() {
         // Testing bit 2
         let mut bmp = BitMap::new(3);
         // 000
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(2) == 0);
         // 001
         let mut bmp = BitMap::new(3);
         bmp.set(1);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(2) == 1);
         // 010
         let mut bmp = BitMap::new(3);
         bmp.set(2);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(2) == 1);
         // 011
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(2);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(2) == 1);
         // 100
         let mut bmp = BitMap::new(3);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(2) == 0);
         // 101
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(2) == 1);
         // 110
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(2) == 1);
         // 111
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(1) == 0);
 
         // Testing bit 0
         let mut bmp = BitMap::new(3);
         // 000
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(0) == 0);
         // 001
         let mut bmp = BitMap::new(3);
         bmp.set(2);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(0) == 1);
         // 010
         let mut bmp = BitMap::new(3);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(0) == 1);
         // 011
         let mut bmp = BitMap::new(3);
         bmp.set(0);
         bmp.set(2);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(0) == 1);
         // 100
         let mut bmp = BitMap::new(3);
         bmp.set(1);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(0) == 0);
         // 101
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(2);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(0) == 1);
         // 110
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(0) == 1);
         // 111
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule110_step(&mut bmp);
+        bmp = rule_step(&mut bmp, RULE);
         assert!(bmp.get(0) == 0);
     }
+}
 
+#[cfg(test)]
+mod image_manip_bench {
+    fn init_logger() {
+        use simple_logger::SimpleLogger;
+        SimpleLogger::new().init().unwrap();
+    }
+    use cellular::image_manip::*;
+    use std::fs::File;
+}
+
+#[cfg(test)]
+mod bitmap_bench {
+    fn init_logger() {
+        use simple_logger::SimpleLogger;
+        SimpleLogger::new().init().unwrap();
+    }
+    use cellular::image_manip::bitmap::*;
+    use std::fs::File;
     use std::time::Duration;
     use std::time::Instant;
+    const RULE: u8 = 110;
     #[test]
-    #[ignore]
-    fn rule_110_profiling() {
+    fn rule_step_profiling() {
+        init_logger();
         let sizes = vec![64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
         let len = sizes.len();
         let mut rule110_times: Vec<Duration> = Vec::with_capacity(sizes.len());
@@ -397,15 +430,15 @@ mod bitmap_tests {
             let mut bmp = BitMap::random(*size);
             let start = Instant::now();
             for _ in 0..num_iterations {
-                bmp = rule110_step(&mut bmp);
+                bmp = rule_step(&mut bmp, RULE);
             }
             let end = Instant::now();
             rule110_times.push(end.duration_since(start));
         }
 
         for i in 0..len {
-            println!(
-                "N: {}, rule110_step: {}s",
+            log::trace!(
+                "N: {}, rule_step: {}s",
                 sizes[i],
                 rule110_times[i].as_secs_f64() / (num_iterations as f64)
             );
@@ -413,7 +446,6 @@ mod bitmap_tests {
     }
 
     #[test]
-    #[ignore]
     fn constructor_profiling() {
         let sizes: Vec<u64> = vec![64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
         let len = sizes.len();
@@ -431,7 +463,7 @@ mod bitmap_tests {
         }
 
         for i in 0..len {
-            println!(
+            log::trace!(
                 "N: {}, constructor: {:?}",
                 sizes[i],
                 constructor_times[i].as_secs_f64() / (num_iterations as f64)

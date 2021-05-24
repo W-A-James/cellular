@@ -1,5 +1,5 @@
 [package]
-name = "ca_110"
+name = "cellular"
 version = "0.1.0"
 authors = ["W-A-James <wajames@princeton.edu>"]
 edition = "2018"
@@ -12,5 +12,6 @@ gif-dispose = "3.1.0"
 clap = "2.33.3"
 rand = "0.7.3"
 log = "0.4.11"
-env_logger = "0.8.2"
+simple_logger = "1.11.0"
 progress = "0.2"
+bit-vec = "0.6.3"

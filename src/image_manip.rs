@@ -1,5 +1,5 @@
-pub mod bitmap;
-pub use bitmap::BitMap;
+mod bitmap;
+use bitmap::BitMap;
 
 use gif::EncodingError;
 use gif::{Encoder, Frame, Repeat};
