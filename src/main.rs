@@ -1,8 +1,8 @@
-use ca_110::cli;
-use ca_110::image_manip::bitmap::BitMap;
-use ca_110::image_manip::build_gif;
-use ca_110::prog::init_progress_bar;
-use ca_110::prog::update_progress_bar;
+use cellular::cli;
+use cellular::image_manip::bitmap::BitMap;
+use cellular::image_manip::build_gif;
+use cellular::prog::init_progress_bar;
+use cellular::prog::update_progress_bar;
 
 use std::sync::mpsc;
 use std::thread;
@@ -11,7 +11,7 @@ use std::time::Duration;
 extern crate log;
 
 fn main() {
-    let args = cli::parse_args();
+    let args = cli::parse_args().expect("Bad arguments provided");
     let mut init_line: BitMap;
 
     if args.random {
