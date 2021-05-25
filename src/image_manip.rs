@@ -1,4 +1,4 @@
-mod bitmap;
+pub mod bitmap;
 use bitmap::BitMap;
 
 use gif::EncodingError;
@@ -6,6 +6,8 @@ use gif::{Encoder, Frame, Repeat};
 
 use std::fs::File;
 use std::sync::mpsc::Sender;
+
+use crate::prog::Message;
 
 enum Colour {
     WHITE,
@@ -77,38 +79,38 @@ pub fn build_gif(
     steps: u32,
     mut init_line: &mut BitMap,
     file_name: &str,
-    progress_bar_tx_wrap: Option<Sender<u32>>,
+    progress_bar_tx_wrap: Option<&Sender<Message>>,
     rule: u8,
 ) -> Result<(), EncodingError> {
     let mut file = File::create(file_name)?;
     // Set with two colours: white, black
     let color_map = &[0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00];
-    let mut encoder = Encoder::new(&mut file, width, height, color_map).unwrap();
-    encoder.set_repeat(Repeat::Infinite).unwrap();
+    let mut encoder = Encoder::new(&mut file, width, height, color_map)?;
+    encoder.set_repeat(Repeat::Infinite)?;
     // build initial frame
-    let mut img = init_image(width, height, &mut init_line, rule).unwrap();
+    let mut img = init_image(width, height, &mut init_line, rule)?;
     let frame = build_frame(width, height, &img);
 
-    encoder.write_frame(&frame).unwrap();
+    encoder.write_frame(&frame)?;
 
     match progress_bar_tx_wrap {
         Some(progress_bar_tx) => {
             // iterate over other frames
             for s in 1..steps {
-                gen_next_image(&mut img, width, height, &mut init_line, rule).unwrap();
+                gen_next_image(&mut img, width, height, &mut init_line, rule)?;
                 let frame = build_frame(width, height, &img);
-                encoder.write_frame(&frame).unwrap();
+                encoder.write_frame(&frame)?;
                 // Update progress bar
-                progress_bar_tx.send(s).unwrap();
+                progress_bar_tx.send(Message::Update(s)).unwrap();
             }
             // Finish updating progress bar
-            progress_bar_tx.send(steps - 1).unwrap();
+            progress_bar_tx.send(Message::Kill).unwrap();
         }
         None => {
             for _ in 1..steps {
-                gen_next_image(&mut img, width, height, &mut init_line, rule).unwrap();
+                gen_next_image(&mut img, width, height, &mut init_line, rule)?;
                 let frame = build_frame(width, height, &img);
-                encoder.write_frame(&frame).unwrap();
+                encoder.write_frame(&frame)?;
             }
         }
     }
