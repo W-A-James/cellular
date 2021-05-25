@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod image_manip_tests {
+    use cellular::image_manip::bitmap::BitMap;
     use cellular::image_manip::*;
     use std::fs::File;
 
