@@ -22,7 +22,7 @@ impl ProgBar {
         bar.set_prefix(format!("Building: '{}'", outfile));
         bar.set_position(0);
         ProgBar {
-            bar: bar,
+            bar,
             outfile: outfile.clone(),
         }
     }
