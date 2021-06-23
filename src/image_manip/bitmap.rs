@@ -1,5 +1,5 @@
 use bit_vec::BitVec;
-use rand::Rng;
+use rand::distributions::{Bernoulli, Distribution};
 use std::convert::TryInto;
 
 #[derive(Debug)]
@@ -19,12 +19,14 @@ impl BitMap {
         }
     }
 
-    pub fn random(length: u64) -> BitMap {
+    pub fn random(length: u64, density: f64) -> BitMap {
+        let d = Bernoulli::new(density).unwrap();
         if length == 0 {
             panic!("Cannot create 0-length bit-map");
         }
         let mut rng = rand::thread_rng();
-        let bit_vector = BitVec::from_fn(length.try_into().unwrap(), |_| rng.gen());
+        let bit_vector = BitVec::from_fn(length.try_into().unwrap(), |_| d.sample(&mut rng));
+        println!("\n\n{:#?}", bit_vector);
 
         BitMap { bit_vector }
     }

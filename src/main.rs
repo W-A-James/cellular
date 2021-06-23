@@ -13,7 +13,7 @@ fn main() {
     let mut init_line: BitMap;
 
     if args.random {
-        init_line = BitMap::random(args.width.into());
+        init_line = BitMap::random(args.width.into(), args.density);
     } else {
         init_line = BitMap::new(args.width.into());
     }

@@ -9,6 +9,7 @@ pub struct CLIArgs {
     pub random: bool,
     pub output: String,
     pub rule: u8,
+    pub density: f64,
 }
 
 impl CLIArgs {
@@ -19,6 +20,7 @@ impl CLIArgs {
         random: bool,
         output: &str,
         rule: u8,
+        density: f64,
     ) -> CLIArgs {
         CLIArgs {
             width,
@@ -27,6 +29,7 @@ impl CLIArgs {
             random,
             output: String::from(output),
             rule,
+            density,
         }
     }
 }
@@ -36,6 +39,24 @@ enum Param {
     Width,
     Frames,
     Rule,
+    Density,
+}
+
+fn validate_float_input(param: Param, val: f64) -> f64 {
+    match param {
+        Param::Density => {
+            if val < 0.0 || val > 1.0 {
+                println!("Density parameter requires a value between 0.0 and 1.0");
+                exit(1);
+            } else {
+                val
+            }
+        }
+        _ => {
+            println!("Only valid for floating point inputs");
+            exit(1);
+        }
+    }
 }
 
 fn validate_integer_inputs(param: Param, val: u64) -> u64 {
@@ -84,10 +105,16 @@ fn validate_integer_inputs(param: Param, val: u64) -> u64 {
                 exit(1);
             }
         }
+        Param::Density => {
+            println!("Cannot parse density in this function");
+            exit(1);
+        }
     }
 }
 
 // TODO: add density option when using --random flag
+// TODO: assume random as default, specify density argument
+// TODO: assume random density is 50% by default
 // TODO: add option to provide an input bitfield as <TBD> file format
 pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
     let matches = App::new("cellular")
@@ -121,11 +148,17 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("random")
-                .long("random")
-                .help("Start with random seed?")
-                .default_value("true"),
+            Arg::with_name("density")
+                .long("density")
+                .help("Probability that each cell in initialized bit vector will be occupied. Should be between 0.0 and 1.0")
+                .default_value("0.5"),
         )
+        .arg( // TODO: ensure that this overrides the width argument
+            Arg::with_name("bitmap")
+            .long("bitmap")
+            .help("Input bitmap as string of 1s and 0s")
+            .conflicts_with("density")
+            )
         .arg(
             Arg::with_name("output")
                 .short("o")
@@ -145,10 +178,6 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
     let width: u16 = match matches.value_of("width").unwrap().parse() {
         Ok(w) => validate_integer_inputs(Param::Width, w).try_into().unwrap(),
         Err(_) => {
-            println!(
-                "Width parameter requires a positive 16 bit integer value (0-{})",
-                u16::MAX
-            );
             exit(1);
         }
     };
@@ -158,10 +187,6 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
             .try_into()
             .unwrap(),
         Err(_) => {
-            println!(
-                "Height parameter requires a positive 16 bit integer value (0-{})",
-                u16::MAX
-            );
             exit(1);
         }
     };
@@ -171,10 +196,6 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
             .try_into()
             .unwrap(),
         Err(_) => {
-            println!(
-                "Frames parameter requires a positive 32 bit integer value (0-{})",
-                u32::MAX
-            );
             exit(1);
         }
     };
@@ -182,7 +203,13 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
     let rule = match matches.value_of("rule").unwrap().parse() {
         Ok(r) => validate_integer_inputs(Param::Rule, r).try_into().unwrap(),
         Err(_) => {
-            println!("Rule parameter requires a non-negative 8 bit integer value (0-255)");
+            exit(1);
+        }
+    };
+
+    let probability_density = match matches.value_of("density").unwrap().parse() {
+        Ok(d) => validate_float_input(Param::Density, d),
+        Err(_) => {
             exit(1);
         }
     };
@@ -193,7 +220,16 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
         format!("output_{}_{}_{}_{}.gif", width, height, steps, rule)
     };
 
-    let random = matches.is_present("random");
+    let random = !matches.is_present("bitmap");
+    println!("{}", random);
 
-    Ok(CLIArgs::new(width, height, steps, random, &output, rule))
+    Ok(CLIArgs::new(
+        width,
+        height,
+        steps,
+        random,
+        &output,
+        rule,
+        probability_density,
+    ))
 }
