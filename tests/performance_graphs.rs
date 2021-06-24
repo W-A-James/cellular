@@ -88,5 +88,10 @@ fn build_rule_step_profiling_graph() {
 
 #[test]
 fn build_gif_profiling_graph() {
-    let table = read_from_csv(BUILD_GIF_PROFILING_FILE_NAME);
+    let out_file_name: &str = "build_gif_profiling_graph.png";
+    let table = read_from_csv(BUILD_GIF_PROFILING_FILE_NAME).unwrap();
+    let widths = table.get("Width").unwrap();
+    let times = table.get("Time (s)").unwrap();
+
+    draw_graph(&widths, &times, out_file_name, 0f64..32768f64, 0f64..10.0f64);
 }
