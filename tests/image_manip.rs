@@ -21,7 +21,7 @@ mod image_manip_tests {
         let rule = 110;
 
         for _ in 0..10 {
-            bmp_1 = bitmap::rule_step(&mut bmp_1, rule);
+            bmp_1.rule_step(rule);
         }
         init_image(10, 11, &mut bmp_0, rule).unwrap();
 
@@ -40,7 +40,7 @@ mod image_manip_tests {
         let mut bmp_1 = BitMap::new(10);
         let rule = 110;
         for _ in 0..11 {
-            bmp_1 = bitmap::rule_step(&mut bmp_1, rule);
+            bmp_1.rule_step(rule);
         }
         let mut img = init_image(10, 11, &mut bmp_0, rule).unwrap();
         gen_next_image(&mut img, 10, 11, &mut bmp_0, rule).unwrap();
@@ -256,144 +256,146 @@ mod bitmap_tests {
 
     #[test]
     fn test_rule_step_normal_cases() {
+        let rule = 110;
         let mut bmp = BitMap::new(3);
         // 000
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(1) == 0);
         // 001
         let mut bmp = BitMap::new(3);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(1) == 1);
         // 010
         let mut bmp = BitMap::new(3);
         bmp.set(1);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(1) == 1);
         // 011
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(1) == 1);
         // 100
         let mut bmp = BitMap::new(3);
         bmp.set(2);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(1) == 0);
         // 101
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(1) == 1);
         // 110
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(1);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(1) == 1);
         // 111
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(1) == 0);
     }
 
     #[test]
     fn test_rule_step_wrap_around_cases() {
+        let rule = 110;
         // Testing bit 2
         let mut bmp = BitMap::new(3);
         // 000
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(2) == 0);
         // 001
         let mut bmp = BitMap::new(3);
         bmp.set(1);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(2) == 1);
         // 010
         let mut bmp = BitMap::new(3);
         bmp.set(2);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(2) == 1);
         // 011
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(2);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(2) == 1);
         // 100
         let mut bmp = BitMap::new(3);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(2) == 0);
         // 101
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(2) == 1);
         // 110
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(2) == 1);
         // 111
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(1) == 0);
 
         // Testing bit 0
         let mut bmp = BitMap::new(3);
         // 000
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(0) == 0);
         // 001
         let mut bmp = BitMap::new(3);
         bmp.set(2);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(0) == 1);
         // 010
         let mut bmp = BitMap::new(3);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(0) == 1);
         // 011
         let mut bmp = BitMap::new(3);
         bmp.set(0);
         bmp.set(2);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(0) == 1);
         // 100
         let mut bmp = BitMap::new(3);
         bmp.set(1);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(0) == 0);
         // 101
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(2);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(0) == 1);
         // 110
         let mut bmp = BitMap::new(3);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(0) == 1);
         // 111
         let mut bmp = BitMap::new(3);
         bmp.set(2);
         bmp.set(1);
         bmp.set(0);
-        bmp = rule_step(&mut bmp, RULE);
+        bmp.rule_step(rule);
         assert!(bmp.get(0) == 0);
     }
 }
@@ -420,9 +422,9 @@ mod image_manip_bench {
             .write_record(&["Width", "Height", "Steps", "Time (s)"])
             .unwrap();
         let rule = 110;
-        let widths: Vec<u16> = vec![100, 200, 400, 800, 1600, 3200];
-        let heights: Vec<u16> = vec![100, 200, 400, 800, 1600, 3200];
-        let frames: Vec<u32> = vec![100, 200, 400, 800, 1600, 3200];
+        let widths: Vec<u16> = vec![100, 200, 400, 800];
+        let heights: Vec<u16> = vec![100, 200, 400, 800];
+        let frames: Vec<u32> = vec![100, 200, 400, 800];
         for width in &widths {
             for height in &heights {
                 for f in &frames {
@@ -432,14 +434,12 @@ mod image_manip_bench {
                     build_gif(*width, *height, *f, &mut line, &fname, None, rule).unwrap();
                     let end = Instant::now();
                     std::fs::remove_file(&fname).unwrap();
-                    writer
-                        .write_record(&[
-                            width.to_string(),
-                            height.to_string(),
-                            f.to_string(),
-                            end.duration_since(start).as_secs_f64().to_string(),
-                        ])
-                        .unwrap();
+                    writer.write_record(&[
+                        format!("{}", width),
+                        format!("{}", height),
+                        format!("{}", f),
+                        end.duration_since(start).as_secs_f64().to_string(),
+                    ]);
                 }
             }
         }
@@ -477,7 +477,7 @@ mod bitmap_bench {
             let mut bmp = BitMap::random(*size, 0.5);
             let start = Instant::now();
             for _ in 0..num_iterations {
-                bmp = rule_step(&mut bmp, RULE);
+                bmp.rule_step(RULE);
             }
             let end = Instant::now();
             writer.write_record(&[
