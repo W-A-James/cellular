@@ -4,10 +4,7 @@ use bitmap::BitMap;
 use gif::EncodingError;
 use gif::{Encoder, Frame, Repeat};
 
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
 use std::fs::File;
-use std::rc::Rc;
 use std::sync::mpsc::Sender;
 
 use crate::prog::Message;
