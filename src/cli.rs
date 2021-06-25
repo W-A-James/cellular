@@ -15,7 +15,7 @@ pub struct CLIArgs {
     pub rule: u8,
     pub density: f64,
     pub bitmap: Option<BitMap>,
-    pub disable_prog: bool
+    pub disable_prog: bool,
 }
 
 impl CLIArgs {
@@ -28,7 +28,7 @@ impl CLIArgs {
         rule: u8,
         density: f64,
         bitmap: Option<BitMap>,
-        disable_prog: bool
+        disable_prog: bool,
     ) -> CLIArgs {
         CLIArgs {
             width,
@@ -39,7 +39,7 @@ impl CLIArgs {
             rule,
             density,
             bitmap,
-            disable_prog
+            disable_prog,
         }
     }
 }
@@ -138,7 +138,7 @@ fn validate_bitmap_input(input_bitmap: &str) -> BitMap {
 
 pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
     let matches = App::new("cellular")
-        .author("W-A-James <wajames@princeton.edu>")
+        .author("W-A-James <wajames2022@gmail.com>")
         .about("A simple command-line based cellular automaton animation creator")
         .arg(
             Arg::with_name("width")
@@ -193,7 +193,7 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
             Arg::with_name("output")
                 .short("o")
                 .long("output")
-                .help("Specifies output file. Defaults to out_<width>_<height>_<frames>_<rule>.gif")
+                .help("Specifies output file. Defaults to output_w<width>_h<height>_f<frames>_r<rule>.gif")
                 .takes_value(true),
         )
         .arg(
@@ -216,6 +216,7 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
             .try_into()
             .unwrap(),
         Err(_) => {
+            println!("Could not interpret height parameter");
             exit(FAILURE_CODE);
         }
     };
@@ -225,6 +226,7 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
             .try_into()
             .unwrap(),
         Err(_) => {
+            println!("Could not interpret frames parameter");
             exit(FAILURE_CODE);
         }
     };
@@ -232,6 +234,7 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
     let rule = match matches.value_of("rule").unwrap().parse() {
         Ok(r) => validate_integer_inputs(Param::Rule, r).try_into().unwrap(),
         Err(_) => {
+            println!("Could not interpret rule parameter");
             exit(FAILURE_CODE);
         }
     };
@@ -239,6 +242,7 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
     let probability_density = match matches.value_of("density").unwrap().parse() {
         Ok(d) => validate_float_input(Param::Density, d),
         Err(_) => {
+            println!("Could not interpret density parameter");
             exit(FAILURE_CODE);
         }
     };
@@ -250,6 +254,7 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
         width = match matches.value_of("width").unwrap().parse() {
             Ok(w) => validate_integer_inputs(Param::Width, w).try_into().unwrap(),
             Err(_) => {
+                println!("Could not interpret width parameter");
                 exit(FAILURE_CODE);
             }
         };
@@ -281,7 +286,7 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
     let output = if matches.is_present("output") {
         String::from(matches.value_of("output").unwrap())
     } else {
-        format!("output_{}_{}_{}_{}.gif", width, height, steps, rule)
+        format!("output_w{}_h{}_f{}_r{}.gif", width, height, steps, rule)
     };
 
     Ok(CLIArgs::new(
@@ -293,6 +298,6 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
         rule,
         probability_density,
         bitmap,
-        disable_prog
+        disable_prog,
     ))
 }
