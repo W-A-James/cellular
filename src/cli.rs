@@ -136,7 +136,6 @@ fn validate_bitmap_input(input_bitmap: &str) -> BitMap {
     bitmap
 }
 
-// TODO: add option to provide an input bitfield as <TBD> file format
 pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
     let matches = App::new("cellular")
         .author("W-A-James <wajames@princeton.edu>")
@@ -172,7 +171,7 @@ pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
                 .help("Probability that each cell in initialized bit vector will be occupied. Should be between 0.0 and 1.0")
                 .default_value("0.5"),
         )
-        .arg( // TODO: ensure that this overrides the width argument
+        .arg(
             Arg::with_name("bitmap")
             .short("b")
             .long("bitmap")
