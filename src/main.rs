@@ -15,40 +15,58 @@ fn main() {
     if args.random {
         init_line = BitMap::random(args.width.into(), args.density);
     } else {
-        init_line = BitMap::new(args.width.into());
+        init_line = args.bitmap.unwrap();
     }
     let steps = args.steps;
     let output: String = args.output.clone();
 
-    let (progress_tx, progress_rx) = mpsc::channel();
-    let mut progress_bar = ProgBar::new(&output, steps);
-
-    let progress_thread = thread::spawn(move || loop {
-        match progress_rx.try_recv() {
-            Ok(msg) => match msg {
-                Message::Update(val) => progress_bar.update((val + 1).into()),
-                Message::Kill => return,
-            },
-            Err(_) => {}
-        };
-    });
-
-    match build_gif(
-        args.width,
-        args.height,
-        args.steps,
-        &mut init_line,
-        args.output.as_str(),
-        Some(&progress_tx),
-        args.rule,
-    ) {
-        Ok(_) => {}
-        Err(_) => {
-            println!("Error building {}", args.output);
-            (&progress_tx).send(Message::Kill).unwrap();
-            exit(1);
+    if args.disable_prog {
+        match build_gif(
+            args.width,
+            args.height,
+            args.steps,
+            &mut init_line,
+            args.output.as_str(),
+            None,
+            args.rule,
+        ) {
+            Ok(_) => {}
+            Err(_) => {
+                println!("Error building {}", args.output);
+                exit(1);
+            }
         }
-    }
+    } else {
+        let (progress_tx, progress_rx) = mpsc::channel();
+        let mut progress_bar = ProgBar::new(&output, steps);
 
-    progress_thread.join().unwrap();
+        let progress_thread = thread::spawn(move || loop {
+            match progress_rx.try_recv() {
+                Ok(msg) => match msg {
+                    Message::Update(val) => progress_bar.update((val + 1).into()),
+                    Message::Kill => return,
+                },
+                Err(_) => {}
+            };
+        });
+
+        match build_gif(
+            args.width,
+            args.height,
+            args.steps,
+            &mut init_line,
+            args.output.as_str(),
+            Some(&progress_tx),
+            args.rule,
+        ) {
+            Ok(_) => {}
+            Err(_) => {
+                println!("Error building {}", args.output);
+                (&progress_tx).send(Message::Kill).unwrap();
+                exit(cli::FAILURE_CODE);
+            }
+        }
+
+        progress_thread.join().unwrap();
+    }
 }
