@@ -37,7 +37,6 @@ impl BitMap {
             BitVec::from_fn(length.try_into().unwrap(), |_| d.sample(&mut rng)),
             BitVec::from_elem(length.try_into().unwrap(), false),
         ];
-        println!("\n\n{:#?}", bit_vector);
 
         BitMap {
             bit_vector: Box::new(bit_vector),
