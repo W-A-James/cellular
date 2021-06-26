@@ -477,6 +477,7 @@ mod bitmap_bench {
     }
 
     #[test]
+    #[ignore]
     fn constructor_profiling() {
         let sizes: Vec<u64> = vec![64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
         let len = sizes.len();
