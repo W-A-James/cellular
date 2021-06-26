@@ -1,0 +1,19 @@
+name: Publish
+
+on:
+  release:
+    types: [ published ]
+env:
+  LOGIN_TOKEN: $CARGO_LOGIN_TOKEN
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: login
+        run: cargo login $LOGIN_TOKEN
+      - name: publish
+        run: cargo publish
