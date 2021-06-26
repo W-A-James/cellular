@@ -4,16 +4,6 @@ mod image_manip_tests {
     use cellular::image_manip::*;
     use std::fs::File;
 
-    fn init_logger() {
-        use simple_logger::SimpleLogger;
-        match SimpleLogger::new().init() {
-            Ok(_) => {}
-            Err(e) => {
-                panic!("Error: {}", e)
-            }
-        }
-    }
-
     #[test]
     fn test_init_image() {
         let mut bmp_0 = BitMap::new(10);
