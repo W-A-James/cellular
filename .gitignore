@@ -1,3 +1,5 @@
 /target
 *.gif
 *.hex
+/releases
+*.tar.gz
