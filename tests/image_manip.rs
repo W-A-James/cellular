@@ -54,9 +54,8 @@ mod image_manip_tests {
         }
     }
 
-    use log::{error, info, trace};
+    use log::{error, trace};
     use std::fs;
-    use std::time::Instant;
 
     fn set_half(bmp: &mut BitMap) {
         for i in 0..bmp.size() / 2 {
@@ -412,6 +411,7 @@ mod image_manip_bench {
     use std::fs::File;
     use std::time::{Duration, Instant};
     #[test]
+    #[ignore]
     fn build_gif_profiling() {
         let mut writer = WriterBuilder::new()
             .delimiter(b',')
@@ -454,13 +454,12 @@ mod bitmap_bench {
     }
     use cellular::image_manip::bitmap::*;
     use csv::*;
-    use std::error::Error;
-    use std::fs::File;
     use std::time::Duration;
     use std::time::Instant;
     const RULE: u8 = 110;
 
     #[test]
+    #[ignore]
     fn rule_step_profiling() {
         init_logger();
         let mut writer = WriterBuilder::new()
