@@ -138,7 +138,7 @@ fn validate_bitmap_input(input_bitmap: &str) -> BitMap {
 
 pub fn parse_args() -> Result<CLIArgs, std::num::ParseIntError> {
     let matches = App::new("cellular")
-        .author("W-A-James <wajames2022@gmail.com>")
+        .author("W-A-James <https://github.com/W-A-James>")
         .about("A simple command-line based cellular automaton animation creator")
         .arg(
             Arg::with_name("width")
