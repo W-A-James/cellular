@@ -15,7 +15,7 @@ cargo install cellular
 ### From source
 
 ```bash
-tar -xvzf cellular.tar.gz .
+tar -xvzf cellular-x.y.z.tar.gz .
 cd cellular
 cargo install --path .
 ```
