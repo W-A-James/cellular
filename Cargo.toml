@@ -5,6 +5,7 @@ authors = ["W-A-James <wajames2022@gmail.com>"]
 edition = "2018"
 license = "MIT"
 description = "A simple command-line based cellular automaton animation creator"
+repository = "https://github.com/W-A-James/cellular"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
