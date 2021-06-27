@@ -14,11 +14,15 @@ cargo install cellular
 
 ### From source
 
+Download the latest release tarball and execute the following:
+
 ```bash
 tar -xvzf cellular-x.y.z.tar.gz .
 cd cellular
 cargo install --path .
 ```
+
+Note that `x.y.z` is the version number of the tarball that you downloaded.
 
 ## Usage
 
@@ -81,3 +85,14 @@ cellular --bitmap 10010111000111 -h 600 -f 100 -d 0.6 -r 106 -o hello_cellular.g
 echo "10010111000111" > file
 cellular --infile file -h 600 -f 100 -d 0.6 -r 106 -o hello_cellular.gif
 ```
+
+## Example output
+
+```bash
+cellular -b 1100111101110100110100011011111110101111101110111001010110011010010001010011111011101110000011100100 -h 100 -f 200 -r 106
+```
+![Rule 106 output](https://github.com/W-A-James/cellular/raw/master/output_w100_h100_f200_r106.gif)
+
+
+
+
