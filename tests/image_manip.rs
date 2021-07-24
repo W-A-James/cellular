@@ -88,7 +88,7 @@ mod image_manip_tests {
                 }
                 Err(e) => {
                     trace!("Error: {:?}", e);
-                    panic!(e);
+                    panic!("{:?}", e);
                 }
             };
             let mut gif_opts = gif::DecodeOptions::new();
@@ -100,10 +100,9 @@ mod image_manip_tests {
                 }
                 Err(e) => {
                     error!("Error: {:?}", e);
-                    panic!(e);
+                    panic!("{:?}", e);
                 }
             };
-            //let screen = gif_dispose::Screen::new_decoder(&decoder);
 
             let mut i = 0;
             let mut exit_loop = false;
@@ -160,13 +159,7 @@ mod image_manip_tests {
 
 #[cfg(test)]
 mod bitmap_tests {
-    fn init_logger() {
-        use simple_logger::SimpleLogger;
-        SimpleLogger::new().init().unwrap();
-    }
-
     use cellular::image_manip::bitmap::*;
-    const RULE: u8 = 110;
     fn get_integer_value(bv: &BitMap) -> u64 {
         let mut rv: u64 = 0;
         for i in 0..bv.size() {
@@ -391,45 +384,47 @@ mod bitmap_tests {
 
 #[cfg(test)]
 mod image_manip_bench {
-    fn init_logger() {
-        use simple_logger::SimpleLogger;
-        SimpleLogger::new().init().unwrap();
-    }
     use cellular::image_manip::bitmap::BitMap;
     use cellular::image_manip::*;
-    use csv::*;
-    use std::fs::File;
-    use std::time::{Duration, Instant};
+    use std::fs;
+    use std::io::Write;
+    use std::time::Instant;
+
     #[test]
-    #[ignore]
     fn build_gif_profiling() {
-        let mut writer = WriterBuilder::new()
-            .delimiter(b',')
-            .quote_style(QuoteStyle::NonNumeric)
-            .from_path("build_gif_profiling.csv")
-            .unwrap();
-        writer
-            .write_record(&["Width", "Height", "Steps", "Time (s)"])
-            .unwrap();
         let rule = 110;
-        let widths: Vec<u16> = vec![100, 200, 400, 800];
-        let heights: Vec<u16> = vec![100, 200, 400, 800];
-        let frames: Vec<u32> = vec![100, 200, 400, 800];
-        for width in &widths {
-            for height in &heights {
+
+        let widths = vec![200, 400, 800, 1600];
+        let heights = vec![200, 400, 800, 1600];
+        let frames = vec![200, 400, 800, 1600];
+        let file_name = "build_gif_profiling_data.csv";
+        let mut file_handle = fs::File::create(file_name).unwrap();
+        file_handle
+            .write("Height,Width,Frames,Time(s)\n".as_bytes())
+            .unwrap();
+        for w in &widths {
+            for h in &heights {
                 for f in &frames {
-                    let fname = format!("test_{}_{}_{}_{}.gif", width, height, f, rule);
-                    let mut line = BitMap::random((*width).into(), 0.5);
+                    let fname = format!("test_{}_{}_{}_{}.gif", w, h, f, rule);
+                    let mut line = BitMap::random((*w).into(), 0.5);
+
                     let start = Instant::now();
-                    build_gif(*width, *height, *f, &mut line, &fname, None, rule).unwrap();
+                    build_gif(*w, *h, *f, &mut line, &fname, None, rule).unwrap();
                     let end = Instant::now();
-                    std::fs::remove_file(&fname).unwrap();
-                    writer.write_record(&[
-                        format!("{}", width),
-                        format!("{}", height),
-                        format!("{}", f),
-                        end.duration_since(start).as_secs_f64().to_string(),
-                    ]);
+                    std::fs::remove_file(fname).unwrap();
+
+                    file_handle
+                        .write(
+                            format!(
+                                "{:4},{:4},{:4},{:4.2}",
+                                h,
+                                w,
+                                f,
+                                end.duration_since(start).as_secs_f64()
+                            )
+                            .as_bytes(),
+                        )
+                        .unwrap();
                 }
             }
         }
@@ -438,30 +433,22 @@ mod image_manip_bench {
 
 #[cfg(test)]
 mod bitmap_bench {
-    fn init_logger() {
-        use simple_logger::SimpleLogger;
-        SimpleLogger::new().init().unwrap();
-    }
     use cellular::image_manip::bitmap::*;
-    use csv::*;
-    use std::time::Duration;
+    use std::fs;
+    use std::io::Write;
     use std::time::Instant;
     const RULE: u8 = 110;
 
     #[test]
-    #[ignore]
     fn rule_step_profiling() {
-        init_logger();
-        let mut writer = WriterBuilder::new()
-            .delimiter(b',')
-            .quote_style(QuoteStyle::NonNumeric)
-            .from_path("rule_step_profiling.csv")
-            .unwrap();
-        writer.write_record(&["Width", "Time(s)"]).unwrap();
+        let file_name = "rule_step_profiling_data.csv";
+        let mut file_handle = fs::File::create(file_name).unwrap();
         let sizes = vec![64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
-        let len = sizes.len();
-        let num_iterations = 1000;
+        let num_iterations = 100000;
 
+        file_handle
+            .write("Size,Iters,Time(s)\n".as_bytes())
+            .unwrap();
         for size in &sizes {
             let mut bmp = BitMap::random(*size, 0.5);
             let start = Instant::now();
@@ -469,37 +456,17 @@ mod bitmap_bench {
                 bmp.rule_step(RULE);
             }
             let end = Instant::now();
-            writer.write_record(&[
-                format!("{}", size),
-                end.duration_since(start).as_secs_f64().to_string(),
-            ]);
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn constructor_profiling() {
-        let sizes: Vec<u64> = vec![64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
-        let len = sizes.len();
-        let mut constructor_times: Vec<Duration> = Vec::with_capacity(sizes.len());
-        let num_iterations = 1000;
-
-        for size in &sizes {
-            let start = Instant::now();
-            for _ in 0..num_iterations {
-                let _bmp = BitMap::random(*size, 0.5);
-            }
-            let end = Instant::now();
-
-            constructor_times.push(end.duration_since(start));
-        }
-
-        for i in 0..len {
-            log::trace!(
-                "N: {}, constructor: {:?}",
-                sizes[i],
-                constructor_times[i].as_secs_f64() / (num_iterations as f64)
-            );
+            file_handle
+                .write(
+                    format!(
+                        "{},{},{:.3}\n",
+                        size,
+                        num_iterations,
+                        end.duration_since(start).as_secs_f64()
+                    )
+                    .as_bytes(),
+                )
+                .unwrap();
         }
     }
 }
